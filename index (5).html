@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Где проведём время всем классом?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Onest:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #bfe3ff;
+    --ink: #14213d;
+    --sun: #ffc83d;
+    --paper: #fffdf7;
+    --coral: #ff6b5b;
+    --line: #d9dfe8;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: var(--sky);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .card {
+    width: 100%;
+    max-width: 460px;
+    background: var(--paper);
+    padding: 18px 18px 28px;
+    box-shadow: 0 14px 0 -6px rgba(20,33,61,.18), 0 24px 40px rgba(20,33,61,.18);
+    transform: rotate(-1.2deg);
+  }
+  .photo {
+    aspect-ratio: 4 / 3;
+    background: var(--sun);
+    display: flex;
+    align-items: flex-end;
+    padding: 16px;
+    margin-bottom: 22px;
+    background-image:
+      radial-gradient(circle at 78% 28%, #fff7d1 0 46px, transparent 47px),
+      linear-gradient(to top, #2a9d8f 0 22%, var(--sun) 22%);
+  }
+  h1 {
+    font-family: "Unbounded", system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(26px, 8vw, 36px);
+    line-height: 1.08;
+    margin: 0;
+    color: var(--ink);
+  }
+  p.lead { margin: 0 0 18px; font-size: 16px; line-height: 1.5; }
+  label { display: block; font-weight: 600; margin: 0 0 6px; }
+  textarea, input[type=text] {
+    width: 100%;
+    font: inherit;
+    font-size: 16px;
+    color: var(--ink);
+    background: #fff;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  textarea:focus, input:focus { outline: 3px solid var(--sun); border-color: var(--ink); }
+  button {
+    width: 100%;
+    font-family: "Unbounded", system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--ink);
+    background: var(--sun);
+    border: 2px solid var(--ink);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--ink);
+  }
+  button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+  button:focus-visible { outline: 3px solid var(--coral); outline-offset: 3px; }
+  button:disabled { opacity: .6; cursor: wait; }
+  .status { margin: 14px 0 0; min-height: 22px; font-weight: 600; }
+  .status.ok { color: #1b7f5c; }
+  .status.err { color: #c0392b; }
+  .hp { position: absolute; left: -9999px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="photo" role="img" aria-label="Солнце над полем">
+      <h1>Где проведём время всем классом?</h1>
+    </div>
+
+    <p class="lead">Напиши место, куда мы могли бы поехать или пойти всем вместе. Можно несколько идей.</p>
+
+    <form id="form">
+      <input type="hidden" name="access_key" value="d0c60bc2-d5e5-4be7-a84a-169698074b0b">
+      <input type="hidden" name="subject" value="Новое пожелание: куда поехать">
+      <input type="hidden" name="from_name" value="Сайт с пожеланиями">
+
+      <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off">
+
+      <label for="where">Куда?</label>
+      <textarea id="where" name="Куда" required maxlength="500" placeholder="Например: парк, каток, кафе, пикник на природе"></textarea>
+
+      <label for="who">Имя (по желанию)</label>
+      <input id="who" type="text" name="Имя" maxlength="60" placeholder="Можно анонимно" autocomplete="off">
+
+      <button id="send" type="submit">Отправить</button>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </form>
+  </main>
+
+<script>
+  const form = document.getElementById("form");
+  const btn = document.getElementById("send");
+  const status = document.getElementById("status");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    status.className = "status";
+    status.textContent = "";
+    if (form.botcheck.checked) return;
+
+    btn.disabled = true;
+    btn.textContent = "Отправляю…";
+    try {
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Accept": "application/json" },
+        body: new FormData(form)
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "fail");
+      status.className = "status ok";
+      status.textContent = "Отправлено! Спасибо за идею.";
+      form.reset();
+    } catch (err) {
+      status.className = "status err";
+      status.textContent = "Не отправилось. Проверь интернет и попробуй ещё раз.";
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Отправить";
+    }
+  });
+</script>
+</body>
+</html>
